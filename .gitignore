@@ -1,0 +1,6 @@
+node_modules
+.pnpm-store
+.turbo
+.next
+apps/dashboard/vocallia.db
+apps/dashboard/public/audio/*.mp3
