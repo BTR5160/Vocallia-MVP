@@ -13,13 +13,14 @@ export async function POST() {
     return NextResponse.json({ error: 'Missing OPENAI_API_KEY' }, { status: 500 });
   }
 
-  const model = process.env.OPENAI_REALTIME_MODEL ?? 'gpt-4o-realtime-preview';
+  const model = process.env.OPENAI_REALTIME_MODEL ?? 'gpt-realtime';
 
   const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       'Content-Type': 'application/json',
+      'OpenAI-Beta': 'realtime=v1',
     },
     body: JSON.stringify({
       model,
@@ -34,14 +35,20 @@ export async function POST() {
       input_audio_transcription: {
         model: 'gpt-4o-mini-transcribe',
       },
-      temperature: 0.7,
     }),
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(
+      {
+        error: 'Failed to create realtime session',
+        status: response.status,
+        details: data,
+      },
+      { status: response.status },
+    );
   }
 
   return NextResponse.json(data);

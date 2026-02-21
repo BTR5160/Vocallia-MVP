@@ -127,16 +127,28 @@ export default function Home() {
   };
 
   const start = async () => {
-    playerRef.current = new AudioPlayer();
-    await playerRef.current.resume();
+    try {
+      playerRef.current = new AudioPlayer();
+      await playerRef.current.resume();
 
-    realtimeRef.current = new RealtimeClient();
-    const stream = await realtimeRef.current.connect(handleRealtimeEvent);
-    setupLocalVadFallback(stream);
+      realtimeRef.current = new RealtimeClient();
+      const stream = await realtimeRef.current.connect(handleRealtimeEvent);
+      setupLocalVadFallback(stream);
 
-    setStarted(true);
-    setStatus('listening');
-    pushDebug('Realtime started.');
+      setStarted(true);
+      setStatus('listening');
+      pushDebug('Realtime started.');
+    } catch (error) {
+      realtimeRef.current?.close();
+      realtimeRef.current = null;
+
+      await playerRef.current?.close();
+      playerRef.current = null;
+
+      setStarted(false);
+      setStatus('idle');
+      pushDebug(`Start failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const stop = async () => {
@@ -163,7 +175,7 @@ export default function Home() {
       <h1>Vocallia Realtime Voice MVP</h1>
       <p>Browser-based realtime Tunisian order confirmation agent with ElevenLabs TTS + barge-in.</p>
 
-      <button onClick={started ? stop : start}>{started ? 'Stop' : 'Start'}</button>
+      <button onClick={() => void (started ? stop() : start())}>{started ? 'Stop' : 'Start'}</button>
 
       <div style={{ marginTop: '1rem' }}>
         <span className="badge" style={{ background: badgeColor }}>

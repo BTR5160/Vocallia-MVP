@@ -23,7 +23,7 @@ ELEVEN_API_KEY=...
 ELEVEN_VOICE_ID=...
 ELEVEN_MODEL_ID=eleven_flash_v2_5
 # optional:
-# OPENAI_REALTIME_MODEL=gpt-4o-realtime-preview
+# OPENAI_REALTIME_MODEL=gpt-realtime
 # NEXT_PUBLIC_OPENAI_REALTIME_URL=https://api.openai.com/v1/realtime
 ```
 
