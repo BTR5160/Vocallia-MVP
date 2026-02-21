@@ -7,11 +7,12 @@ export class RealtimeClient {
 
   async connect(onEvent: RealtimeEventHandler) {
     const sessionResponse = await fetch('/api/realtime/session', { method: 'POST' });
-    if (!sessionResponse.ok) {
-      throw new Error('Failed to create realtime session');
-    }
-
     const sessionData = await sessionResponse.json();
+
+    if (!sessionResponse.ok) {
+      const errorMessage = sessionData?.details?.error?.message ?? sessionData?.error ?? 'Failed to create realtime session';
+      throw new Error(errorMessage);
+    }
     const ephemeralKey =
       sessionData?.client_secret?.value ?? sessionData?.ephemeral_key ?? sessionData?.token;
 
@@ -48,7 +49,7 @@ export class RealtimeClient {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    const model = sessionData?.model ?? 'gpt-4o-realtime-preview';
+    const model = sessionData?.model ?? 'gpt-realtime';
     const baseUrl = process.env.NEXT_PUBLIC_OPENAI_REALTIME_URL ?? 'https://api.openai.com/v1/realtime';
 
     const sdpResponse = await fetch(`${baseUrl}?model=${encodeURIComponent(model)}`, {
