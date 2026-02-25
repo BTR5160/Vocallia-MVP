@@ -176,6 +176,7 @@ export default function Home() {
       <p>Browser-based realtime Tunisian order confirmation agent with ElevenLabs TTS + barge-in.</p>
 
       <button onClick={() => void (started ? stop() : start())}>{started ? 'Stop' : 'Start'}</button>
+      <p style={{ marginTop: '0.75rem' }}>Try the local WS pipeline at <a href="/live-call">/live-call</a>.</p>
 
       <div style={{ marginTop: '1rem' }}>
         <span className="badge" style={{ background: badgeColor }}>
