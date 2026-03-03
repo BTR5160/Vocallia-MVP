@@ -146,40 +146,74 @@ function requestFinalTranscript(state) {
 }
 
 async function buildAssistantResponse(userText) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const schemaResponseFormat = {
+    type: 'json_schema',
+    json_schema: {
+      name: 'assistant_turn',
+      strict: true,
+      schema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          intent: { type: 'string' },
+          say: { type: 'string' },
+          // Keep slots deterministic for Structured Outputs: object + required keys + no extra keys.
+          slots: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              name: { type: 'string' },
+              phone: { type: 'string' },
+              city: { type: 'string' },
+              order_id: { type: 'string' },
+            },
+            required: ['name', 'phone', 'city', 'order_id'],
+          },
+        },
+        required: ['intent', 'say', 'slots'],
+      },
+    },
+  };
+
+  const requestBody = {
+    model: OPENAI_MODEL,
+    temperature: 0.4,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: userText },
+    ],
+    response_format: schemaResponseFormat,
+  };
+
+  let response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      temperature: 0.4,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userText },
-      ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'assistant_turn',
-          strict: true,
-          schema: {
-            type: 'object',
-            additionalProperties: false,
-            properties: {
-              intent: { type: 'string' },
-              say: { type: 'string' },
-              slots: { type: 'object', additionalProperties: true },
-            },
-            required: ['intent', 'say', 'slots'],
-          },
-        },
-      },
-    }),
+    body: JSON.stringify(requestBody),
   });
 
-  const data = await response.json();
+  let data = await response.json();
+
+  if (!response.ok && String(data?.error?.message || '').includes('Invalid schema for response_format')) {
+    requestBody.messages = [
+      { role: 'system', content: `${SYSTEM_PROMPT} Return ONLY JSON with keys intent, say, slots. No extra keys.` },
+      { role: 'user', content: userText },
+    ];
+    requestBody.response_format = { type: 'json_object' };
+
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+    data = await response.json();
+  }
+
   if (!response.ok) throw new Error(data?.error?.message || 'OpenAI completion failed');
 
   const content = data?.choices?.[0]?.message?.content;
