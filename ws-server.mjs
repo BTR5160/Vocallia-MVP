@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process';
 import process from 'node:process';
 import WebSocket, { WebSocketServer } from 'ws';
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
 
 const PORT = Number(process.env.WS_PORT || 8787);
 const ELEVEN_MODEL_ID = process.env.ELEVEN_MODEL_ID || 'eleven_flash_v2_5';
